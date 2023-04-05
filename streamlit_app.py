@@ -1,42 +1,73 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
-import streamlit as st
-
-"""
-# Welcome to Streamlit!
-
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
-
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+import streamlit as st # web development
+import numpy as np # np mean, np random 
+import pandas as pd # read csv, df manipulation
+import time # to simulate a real time data, time loop 
+import plotly.express as px # interactive charts 
 
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+# read csv from a github repo
+df = pd.read_csv("https://raw.githubusercontent.com/Lexie88rus/bank-marketing-analysis/master/bank.csv")
 
-    Point = namedtuple('Point', 'x y')
-    data = []
 
-    points_per_turn = total_points / num_turns
+st.set_page_config(
+    page_title = 'Real-Time Data Science Dashboard',
+    page_icon = '✅',
+    layout = 'wide'
+)
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
+# dashboard title
 
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
-st.write("아닌가 ??????????!!!!!!!!!!!")
-st.write("아닌가 ??????????!!!!!!!!!!!")
-st.write("아닌가 ??????????!!!!!!!!!!!")
-st.write("아닌가 ??????????!!!!!!!!!!!")
+st.title("Real-Time / Live Data Science Dashboard")
+
+# top-level filters 
+
+job_filter = st.selectbox("Select the Job", pd.unique(df['job']))
+
+
+# creating a single-element container.
+placeholder = st.empty()
+
+# dataframe filter 
+
+df = df[df['job']==job_filter]
+
+# near real-time / live feed simulation 
+
+for seconds in range(200):
+#while True: 
+    
+    df['age_new'] = df['age'] * np.random.choice(range(1,5))
+    df['balance_new'] = df['balance'] * np.random.choice(range(1,5))
+
+    # creating KPIs 
+    avg_age = np.mean(df['age_new']) 
+
+    count_married = int(df[(df["marital"]=='married')]['marital'].count() + np.random.choice(range(1,30)))
+    
+    balance = np.mean(df['balance_new'])
+
+    with placeholder.container():
+        # create three columns
+        kpi1, kpi2, kpi3 = st.columns(3)
+
+        # fill in those three columns with respective metrics or KPIs 
+        kpi1.metric(label="Age ⏳", value=round(avg_age), delta= round(avg_age) - 10)
+        kpi2.metric(label="Married Count 💍", value= int(count_married), delta= - 10 + count_married)
+        kpi3.metric(label="A/C Balance ＄", value= f"$ {round(balance,2)} ", delta= - round(balance/count_married) * 100)
+
+        # create two columns for charts 
+
+        fig_col1, fig_col2 = st.columns(2)
+        with fig_col1:
+            st.markdown("### First Chart")
+            fig = px.density_heatmap(data_frame=df, y = 'age_new', x = 'marital')
+            st.write(fig)
+        with fig_col2:
+            st.markdown("### Second Chart")
+            fig2 = px.histogram(data_frame = df, x = 'age_new')
+            st.write(fig2)
+        st.markdown("### Detailed Data View")
+        st.dataframe(df)
+        time.sleep(1)
+    #placeholder.empty()
+
